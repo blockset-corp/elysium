@@ -18,8 +18,15 @@ class Collection(GenericModel, Generic[Contents]):
         fields = {'embedded': '_embedded', 'links': '_links'}
 
 
+class Amount(BaseModel):
+    amount: str
+    currency_id: str
+
+
 class FeeEstimate(BaseModel):
-    pass
+    fee: Amount
+    tier: str
+    estimated_confirmation_in: int
 
 
 class Blockchain(BaseModel):
@@ -33,5 +40,3 @@ class Blockchain(BaseModel):
     verified_block_height: int
     verified_block_hash: str
     confirmations_until_final: int
-
-

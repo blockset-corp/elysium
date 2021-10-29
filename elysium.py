@@ -7,13 +7,14 @@ app = FastAPI()
 
 
 @app.get('/blockchains', response_model=Collection[Blockchain])
-def get_blockchains(
+async def get_blockchains(
         testnet: Optional[bool] = False,
         include_experimental: Optional[bool] = False
 ):
+    chains = await blockchains.get_blockchains(testnet=testnet)
     return Collection(
         _embedded={
-            'blockchains': blockchains.get_blockchains(),
+            'blockchains': chains,
         },
         _links={}
     )
