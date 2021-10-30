@@ -1,8 +1,3 @@
-from typing import List
-from aiohttp import ClientSession
-from entities import Blockchain
-import blockcypher
-
 BLOCKCHAINS = [
     {
         'name': 'Bitcoin',
@@ -15,19 +10,23 @@ BLOCKCHAINS = [
         'name': 'Bitcoin',
         'id': 'bitcoin-testnet',
         'is_mainnet': False,
-        'network': 'bitcoin',
+        'network': 'testnet',
         'confirmations_until_final': 10
+    },
+    {
+        'name': 'Dogecoin',
+        'id': 'dogecoin-mainnet',
+        'is_mainnet': True,
+        'network': 'mainnet',
+        'confirmations_until_final': 40
+    },
+    {
+        'name': 'Litecoin',
+        'id': 'litecoin-mainnet',
+        'is_mainnet': True,
+        'network': 'mainnet',
+        'confirmations_until_final': 12
     }
 ]
 
-
-async def get_blockchains(testnet) -> List[Blockchain]:
-    col = []
-    async with ClientSession() as session:
-        for chain in BLOCKCHAINS:
-            if (testnet and chain['is_mainnet']) or (not testnet and not chain['is_mainnet']):
-                continue
-            data = await blockcypher.get_blockchain_data(session, chain['id'])
-            data.update(chain)
-            col.append(Blockchain(**data))
-    return col
+BLOCKCHAIN_MAP = {c['id']: c for c in BLOCKCHAINS}
