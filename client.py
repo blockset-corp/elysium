@@ -5,6 +5,7 @@ from entities import Blockchain, Transaction, HeightPaginatedResponse
 from blockchains import BLOCKCHAINS
 from providers.abstract import AbstractProvider
 from providers.blockcypher import BlockCypherProvider
+from providers.bitgo import BitgoFeeProvider
 
 
 class Client(ClientSession):
@@ -12,7 +13,8 @@ class Client(ClientSession):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        blockcypher = BlockCypherProvider()
+        bitgo = BitgoFeeProvider()
+        blockcypher = BlockCypherProvider(bitgo)
         self.provider_map = {
             'bitcoin-mainnet': blockcypher,
             'bitcoin-testnet': blockcypher,
@@ -58,22 +60,22 @@ class Client(ClientSession):
         results = await gather(*tasks)
 
         all_txns = []
-        highest_next_start_height = None
-        lowest_next_end_height = None
+        lowest_next_start_height = None
+        highest_next_end_height = None
 
         for resp in results:
             if resp.has_more:
-                if highest_next_start_height is None or resp.next_start_height > highest_next_start_height:
-                    highest_next_start_height = resp.next_start_height
-                if lowest_next_end_height is None or resp.next_end_height < lowest_next_end_height:
-                    lowest_next_end_height = resp.next_end_height
+                if lowest_next_start_height is None or resp.next_start_height < lowest_next_start_height:
+                    lowest_next_start_height = resp.next_start_height
+                if highest_next_end_height is None or resp.next_end_height > highest_next_end_height:
+                    highest_next_end_height = resp.next_end_height
             all_txns.extend(resp.contents)
 
         resp = HeightPaginatedResponse(contents=all_txns, has_more=False)
 
-        if highest_next_start_height is not None or lowest_next_end_height is not None:
+        if lowest_next_start_height is not None or highest_next_end_height is not None:
             resp.has_more = True
-            resp.next_start_height = highest_next_start_height
-            resp.next_end_height = lowest_next_end_height
+            resp.next_start_height = lowest_next_start_height
+            resp.next_end_height = highest_next_end_height
 
         return resp

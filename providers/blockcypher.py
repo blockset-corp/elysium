@@ -3,7 +3,7 @@ from datetime import datetime
 from aiohttp import ClientSession
 from dateutil.parser import isoparse
 from entities import Blockchain, Transaction, Amount, Transfer
-from providers.abstract import AbstractProvider, HeightPaginatedResponse
+from providers.abstract import AbstractProvider, AbstractFeeProvider, HeightPaginatedResponse
 from blockchains import BLOCKCHAIN_MAP
 
 BASE_URL = 'https://api.blockcypher.com/v1'
@@ -19,12 +19,16 @@ CHAIN_MAP = {
 
 
 class BlockCypherProvider(AbstractProvider):
+    def __init__(self, fee_provider: AbstractFeeProvider):
+        self.fee_provider = fee_provider
+
     async def get_blockchain_data(self, session: ClientSession, chain_id: str) -> Blockchain:
         blockcypher_id = _blockcypher_id(chain_id)
         async with session.get(f'{BASE_URL}/{blockcypher_id}?token={TOKEN}') as resp:
             val = await resp.json()
+        fees = await self.fee_provider.get_fees(session, chain_id)
         return Blockchain(
-            fee_estimates=[],  # TODO: read fees here
+            fee_estimates=fees,
             fee_estimates_timestamp=datetime.now(),
             block_height=val['height'],
             verified_block_height=val['height'],
