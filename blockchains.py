@@ -26,6 +26,13 @@ BLOCKCHAINS = [
         'is_mainnet': True,
         'network': 'mainnet',
         'confirmations_until_final': 12
+    },
+    {
+        'name': 'Ethereum',
+        'id': 'ethereum-mainnet',
+        'is_mainnet': True,
+        'network': 'mainnet',
+        'confirmations_until_final': 20
     }
 ]
 

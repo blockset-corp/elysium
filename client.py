@@ -6,6 +6,7 @@ from blockchains import BLOCKCHAINS
 from providers.abstract import AbstractProvider
 from providers.blockcypher import BlockCypherProvider
 from providers.bitgo import BitgoFeeProvider
+from providers.etherscan import EtherscanProvider
 
 
 class Client(ClientSession):
@@ -15,11 +16,13 @@ class Client(ClientSession):
         super().__init__(*args, **kwargs)
         bitgo = BitgoFeeProvider()
         blockcypher = BlockCypherProvider(bitgo)
+        etherscan = EtherscanProvider()
         self.provider_map = {
             'bitcoin-mainnet': blockcypher,
             'bitcoin-testnet': blockcypher,
             'litecoin-mainnet': blockcypher,
             'dogecoin-mainnet': blockcypher,
+            'ethereum-mainnet': etherscan
         }
 
     def _get_provider(self, blockchain_id: str) -> AbstractProvider:

@@ -1,4 +1,5 @@
 import os
+import warnings
 from datetime import datetime
 from aiohttp import ClientSession
 from dateutil.parser import isoparse
@@ -9,7 +10,7 @@ from blockchains import BLOCKCHAIN_MAP
 BASE_URL = 'https://api.blockcypher.com/v1'
 TOKEN = os.getenv('BLOCKCYPHER_TOKEN', '')
 if not TOKEN:
-    raise ValueError('BLOCKCYPHER_TOKEN not found in environment')
+    warnings.warn('BLOCKCYPHER_TOKEN not found in environment')
 CHAIN_MAP = {
     'bitcoin-mainnet': 'btc/main',
     'bitcoin-testnet': 'btc/test3',
