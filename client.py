@@ -1,5 +1,5 @@
 from typing import List, Dict
-from asyncio import gather
+from asyncio import gather, Semaphore
 from aiohttp import ClientSession
 from entities import Blockchain, Transaction, HeightPaginatedResponse
 from blockchains import BLOCKCHAINS
@@ -37,8 +37,43 @@ class Client(ClientSession):
             provider = self._get_provider(chain['id'])
             tasks.append(provider.get_blockchain_data(self, chain['id']))
         results = await gather(*tasks)
-        return results
+        return list(results)
 
     async def get_transactions(self, addresses: List[str], blockchain_id: str, start_height: int, end_height: int,
                                max_page_size: int, include_raw: bool) -> HeightPaginatedResponse[Transaction]:
-        pass
+        sem = Semaphore(12)
+        provider = self._get_provider(blockchain_id)
+
+        async def fetch(addr):
+            async with sem:
+                return await provider.get_address_transactions(
+                    session=self,
+                    chain_id=blockchain_id,
+                    address=addr,
+                    start_height=start_height,
+                    end_height=end_height
+                )
+
+        tasks = [fetch(addr) for addr in addresses]
+        results = await gather(*tasks)
+
+        all_txns = []
+        highest_next_start_height = None
+        lowest_next_end_height = None
+
+        for resp in results:
+            if resp.has_more:
+                if highest_next_start_height is None or resp.next_start_height > highest_next_start_height:
+                    highest_next_start_height = resp.next_start_height
+                if lowest_next_end_height is None or resp.next_end_height < lowest_next_end_height:
+                    lowest_next_end_height = resp.next_end_height
+            all_txns.extend(resp.contents)
+
+        resp = HeightPaginatedResponse(contents=all_txns, has_more=False)
+
+        if highest_next_start_height is not None or lowest_next_end_height is not None:
+            resp.has_more = True
+            resp.next_start_height = highest_next_start_height
+            resp.next_end_height = lowest_next_end_height
+
+        return resp

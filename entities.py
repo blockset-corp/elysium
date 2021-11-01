@@ -57,11 +57,6 @@ class Blockchain(BaseModel):
     confirmations_until_final: int
 
 
-class Fee(BaseModel):
-    currency_id: str
-    amount: str
-
-
 class Transfer(BaseModel):
     transfer_id: str
     blockchain_id: str
@@ -79,13 +74,14 @@ class Transaction(BaseModel):
     hash: str
     blockchain_id: str
     timestamp: datetime
-    embedded: Dict[str, Transfer]
-    fee: Fee
+    embedded: Dict[str, List[Transfer]]
+    fee: Amount
     confirmations: int
     block_hash: str
     block_height: int
     status: str
     meta: Dict[str, str]
+    raw: Optional[str]
 
     class Config:
-        fields = {'_embedded': 'embedded'}
+        fields = {'embedded': '_embedded'}

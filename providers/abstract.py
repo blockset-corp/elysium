@@ -9,6 +9,6 @@ class AbstractProvider(ABC):
         pass
 
     @abstractmethod
-    async def get_address_transactions(self, session: ClientSession, address: str,
+    async def get_address_transactions(self, session: ClientSession, chain_id: str, address: str,
                                        start_height: int, end_height: int) -> HeightPaginatedResponse[Transaction]:
         pass

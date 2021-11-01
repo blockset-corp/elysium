@@ -1,5 +1,5 @@
 from typing import Optional, List
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Query
 from entities import Collection, Blockchain, Transaction
 from client import Client
 
@@ -23,8 +23,8 @@ async def get_blockchains(
 @app.get('/transactions', response_model=Collection[Transaction])
 async def get_transactions(
         request: Request,
-        address: List[str],
         blockchain_id: str,
+        address: List[str] = Query(None),
         start_height: int = 0,
         end_height: Optional[int] = None,
         max_page_size: Optional[int] = 50,
