@@ -1,6 +1,6 @@
 from typing import Optional, List
 from fastapi import FastAPI, Request, Query
-from entities import Collection, Blockchain, Transaction
+from entities import Collection, Link, Blockchain, Transaction
 from client import Client
 
 app = FastAPI()
@@ -18,6 +18,13 @@ async def get_blockchains(
         },
         _links={}
     )
+
+
+@app.get('/blockchains/{blockchain_id}', response_model=Blockchain)
+async def get_blockchain(blockchain_id: str):
+    async with Client() as client:
+        chain = await client.get_blockchain(blockchain_id)
+    return chain
 
 
 @app.get('/transactions', response_model=Collection[Transaction])
@@ -43,10 +50,10 @@ async def get_transactions(
         )
     links = {}
     if transactions.next_start_height is not None:
-        links['next'] = request.url.include_query_params(
+        links['next'] = Link(href=str(request.url.include_query_params(
             start_height=transactions.next_start_height,
             end_height=transactions.next_end_height
-        )
+        )))
     return Collection(
         _embedded={
             'transactions': transactions.contents
