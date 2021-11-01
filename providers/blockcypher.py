@@ -1,8 +1,8 @@
 import os
 from datetime import datetime
 from aiohttp import ClientSession
-from entities import Blockchain
-from .abstract import AbstractProvider
+from entities import Blockchain, Transaction
+from providers.abstract import AbstractProvider, HeightPaginatedResponse
 from blockchains import BLOCKCHAIN_MAP
 
 BASE_URL = 'https://api.blockcypher.com/v1'
@@ -32,3 +32,8 @@ class BlockCypherProvider(AbstractProvider):
                 verified_block_hash=val['hash'],
                 **BLOCKCHAIN_MAP[chain_id]
             )
+
+    async def get_address_transactions(self, session: ClientSession, address: str, start_height: int,
+                                       end_height: int) -> HeightPaginatedResponse[Transaction]:
+        pass
+
