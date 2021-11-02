@@ -77,6 +77,8 @@ class Transaction(BaseModel):
     embedded: Dict[str, List[Transfer]]
     fee: Amount
     confirmations: int
+    index: int
+    size: int
     block_hash: str
     block_height: int
     status: str

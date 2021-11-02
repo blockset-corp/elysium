@@ -51,7 +51,7 @@ class BlockCypherProvider(AbstractProvider):
         })
         contents = []
         last_block_height = None
-        for tx in val.get('txs', []):
+        for i, tx in enumerate(val.get('txs', [])):
             txid = f'{chain_id}:{tx["hash"]}'
             transfers = []
             counter = 0
@@ -88,6 +88,8 @@ class BlockCypherProvider(AbstractProvider):
                 _embedded={'transfers': transfers},
                 fee=_to_amount(chain_id, tx['fees']),
                 confirmations=tx['confirmations'],
+                size=tx['size'],
+                index=i,
                 block_hash=tx['block_hash'],
                 block_height=tx['block_height'],
                 status='confirmed',

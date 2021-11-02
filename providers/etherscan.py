@@ -61,6 +61,13 @@ class EtherscanProvider(AbstractProvider, AbstractFeeProvider):
         for tx in internal_transactions:
             tx_map.setdefault(tx['hash'], default())['int'].append(tx)
 
+        block_indexes = {}
+
+        def block_accumulating_index(block):
+            block_indexes.setdefault(block, 0)
+            block_indexes[block] += 1
+            return block_indexes[block]
+
         for txid, txn in tx_map.items():
             transaction_id = f'{chain_id}:{txid}'
             xfer_counter = 0
@@ -180,6 +187,8 @@ class EtherscanProvider(AbstractProvider, AbstractFeeProvider):
                 _embedded={'transfers': transfers},
                 fee=fee,
                 confirmations=confirmations,
+                index=block_accumulating_index(block_hash),
+                size=int(meta.get('gasUsed', '0x0'), base=16),
                 block_hash=block_hash,
                 block_height=block_height,
                 status='confirmed',
