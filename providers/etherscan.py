@@ -3,6 +3,7 @@ import warnings
 from asyncio import gather, Semaphore
 from datetime import datetime, timedelta
 from typing import List
+import backoff
 from aiohttp import ClientSession
 from entities import HeightPaginatedResponse, Transaction, Blockchain, FeeEstimate, Amount, Transfer
 from providers.abstract import AbstractProvider, AbstractFeeProvider
@@ -12,7 +13,7 @@ BASE_URL = 'https://api.etherscan.io/api'
 TOKEN = os.getenv('ETHERSCAN_TOKEN', '')
 if not TOKEN:
     warnings.warn('ETHERSCAN_TOKEN not found in environment')
-ETHERSCAN_RATE_LIMIT = 5
+ETHERSCAN_RATE_LIMIT = int(os.getenv('ETHERSCAN_RATE_LIMIT', '4'))
 SEM = Semaphore(ETHERSCAN_RATE_LIMIT)
 FEE_CACHE = {}  # {chain_id: {'ts': datetime, 'value': fees}
 FEE_CACHE_EXPIRY = timedelta(minutes=1)
@@ -224,9 +225,14 @@ class EtherscanProvider(AbstractProvider, AbstractFeeProvider):
         })
         return int(result) * 1000
 
+    @backoff.on_exception(backoff.expo, ValueError, max_tries=3)
     async def _get(self, session, **kwargs):
         params = kwargs.pop('params', {})
         params['apikey'] = TOKEN
         async with SEM, session.get(BASE_URL, params=params, **kwargs) as resp:
+            if resp.status != 200:
+                if resp.status != 200:
+                    print(f'Got status code = {resp.status} from Etherscan')
+                    raise ValueError(f'Invalid status code {resp.status} for GET')
             data = await resp.json()
         return data['result']

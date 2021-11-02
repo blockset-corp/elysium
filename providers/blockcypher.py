@@ -2,6 +2,7 @@ import os
 import warnings
 from asyncio import Semaphore
 from datetime import datetime
+import backoff
 from aiohttp import ClientSession
 from dateutil.parser import isoparse
 from entities import Blockchain, Transaction, Amount, Transfer
@@ -10,7 +11,7 @@ from blockchains import BLOCKCHAIN_MAP
 
 BASE_URL = 'https://api.blockcypher.com/v1'
 TOKEN = os.getenv('BLOCKCYPHER_TOKEN', '')
-BLOCKCYPHER_RATE_LIMIT = 10
+BLOCKCYPHER_RATE_LIMIT = int(os.getenv('BLOCKCYPHER_RATE_LIMIT', '5'))
 SEM = Semaphore(value=BLOCKCYPHER_RATE_LIMIT)
 if not TOKEN:
     warnings.warn('BLOCKCYPHER_TOKEN not found in environment')
@@ -104,11 +105,13 @@ class BlockCypherProvider(AbstractProvider):
 
         return resp
 
+    @backoff.on_exception(backoff.expo, ValueError, max_tries=3)
     async def _get(self, session, url, **kwargs):
         params = kwargs.pop('params', {})
         params['token'] = TOKEN
         async with SEM, session.get(f'{BASE_URL}/{url}', params=params, **kwargs) as resp:
             if resp.status != 200:
+                print(f'Got status code = {resp.status} from BlockCypher for {url}')
                 raise ValueError(f'Invalid status code {resp.status} for GET {url}')
             return await resp.json()
 

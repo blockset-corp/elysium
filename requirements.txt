@@ -4,6 +4,7 @@ anyio==3.3.4
 asgiref==3.4.1
 async-timeout==3.0.1
 attrs==21.2.0
+backoff==1.11.1
 brotlipy==0.7.0
 cchardet==2.1.7
 certifi==2021.10.8
