@@ -1,5 +1,4 @@
 from typing import TypeVar, Generic, List, Dict, Optional
-from datetime import datetime
 from pydantic import BaseModel
 from pydantic.generics import GenericModel
 
@@ -49,7 +48,7 @@ class Blockchain(BaseModel):
     id: str
     is_mainnet: bool
     fee_estimates: List[FeeEstimate]
-    fee_estimates_timestamp: datetime
+    fee_estimates_timestamp: str
     network: str
     block_height: int
     verified_block_height: int
@@ -73,7 +72,7 @@ class Transaction(BaseModel):
     identifier: str
     hash: str
     blockchain_id: str
-    timestamp: datetime
+    timestamp: str
     embedded: Dict[str, List[Transfer]]
     fee: Amount
     confirmations: int

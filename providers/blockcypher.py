@@ -30,7 +30,7 @@ class BlockCypherProvider(AbstractProvider):
         fees = await self.fee_provider.get_fees(session, chain_id)
         return Blockchain(
             fee_estimates=fees,
-            fee_estimates_timestamp=datetime.now(),
+            fee_estimates_timestamp=datetime.now().isoformat(),
             block_height=val['height'],
             verified_block_height=val['height'],
             verified_block_hash=val['hash'],
@@ -79,7 +79,7 @@ class BlockCypherProvider(AbstractProvider):
                 identifier=tx['hash'],
                 hash=tx['hash'],
                 blockchain_id=chain_id,
-                timestamp=isoparse(tx['received']),
+                timestamp=isoparse(tx['received']).isoformat(),
                 _embedded={'transfers': transfers},
                 fee=_to_amount(chain_id, tx['fees']),
                 confirmations=tx['confirmations'],
