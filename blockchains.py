@@ -8,12 +8,12 @@ BLOCKCHAINS = [
         'native_currency_id': 'bitcoin-mainnet:__native__'
     },
     {
-        'name': 'Bitcoin',
-        'id': 'bitcoin-testnet',
-        'is_mainnet': False,
-        'network': 'testnet',
-        'confirmations_until_final': 10,
-        'native_currency_id': 'bitcoin-testnet:__native__'
+        'name': 'Bitcoin Cash',
+        'id': 'bitcoincash-mainnet',
+        'is_mainnet': True,
+        'network': 'bitcoincash',
+        'confirmations_until_final': 6,
+        'native_currency_id': 'bitcoincash-mainnet:__native__'
     },
     {
         'name': 'Dogecoin',

@@ -10,6 +10,7 @@ from blockchains import BLOCKCHAINS
 from providers.abstract import AbstractProvider
 from providers.blockcypher import BlockCypherProvider
 from providers.bitgo import BitgoFeeProvider
+from providers.blockbook import BlockbookProvider
 from providers.etherscan import EtherscanProvider
 
 
@@ -28,11 +29,12 @@ class Client(ClientSession):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         bitgo = BitgoFeeProvider()
+        blockbook = BlockbookProvider(bitgo)
         blockcypher = BlockCypherProvider(bitgo)
         etherscan = EtherscanProvider()
         self.provider_map = {
             'bitcoin-mainnet': blockcypher,
-            'bitcoin-testnet': blockcypher,
+            'bitcoincash-mainnet': blockbook,
             'litecoin-mainnet': blockcypher,
             'dogecoin-mainnet': blockcypher,
             'ethereum-mainnet': etherscan
