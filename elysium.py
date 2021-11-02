@@ -1,4 +1,6 @@
+import json
 from datetime import datetime
+from pathlib import Path
 from typing import Optional, List
 from fastapi import FastAPI, Request, Query
 from entities import Collection, Link, Blockchain, Transaction, UserToken
@@ -26,6 +28,13 @@ async def get_blockchain(blockchain_id: str):
     async with Client() as client:
         chain = await client.get_blockchain(blockchain_id)
     return chain
+
+
+@app.get('/currencies')
+async def get_currencies():
+    path = Path(__file__).resolve().parent / 'resources' / 'currencies.json'
+    with path.open('r') as f:
+        return json.load(f)
 
 
 @app.get('/transactions', response_model=Collection[Transaction])
