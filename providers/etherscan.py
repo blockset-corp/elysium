@@ -30,7 +30,7 @@ class EtherscanProvider(AbstractProvider, AbstractFeeProvider):
             fee_estimates=fees,
             fee_estimates_timestamp=datetime.now().isoformat(),
             block_height=int(block['number'], 16),
-            verified_block_height=int(block['number'], 16),
+            verified_height=int(block['number'], 16),
             verified_block_hash=block['hash'],
             **BLOCKCHAIN_MAP[chain_id]
         )

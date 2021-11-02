@@ -32,7 +32,7 @@ class BlockCypherProvider(AbstractProvider):
             fee_estimates=fees,
             fee_estimates_timestamp=datetime.now().isoformat(),
             block_height=val['height'],
-            verified_block_height=val['height'],
+            verified_height=val['height'],
             verified_block_hash=val['hash'],
             **BLOCKCHAIN_MAP[chain_id]
         )
