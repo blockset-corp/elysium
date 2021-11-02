@@ -2,6 +2,24 @@
 
 All Blocksets go to heaven
 
+### Chain Support
+
+- [x] Bitcoin Mainnet
+  - BlockCypher
+- [x] Bitcoin Testnet
+  - BlockCypher
+- [x] Bitcoin Cash Mainnet
+  - BlockCypher
+- [x] Litecoin Mainnet
+  - BlockCypher
+- [x] Dogecoin Mainnet
+  - BlockCypher
+- [x] Ethereum Mainnet
+  - Etherscan
+- [ ] Ripple Mainnet
+- [ ] Tezos Mainnet
+- [ ] Hedera Mainnet
+
 ### Usage
 
 ```shell
@@ -17,6 +35,7 @@ pip install -r requirements.txt
 
 # populate environment
 export BLOCKCYPHER_TOKEN="<TOKEN HERE>"
+export ETHERSCAN_TOKEN="<TOKEN HERE>"
 
 # run it
 uvicorn elysium:app --reload

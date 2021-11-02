@@ -84,3 +84,14 @@ class Transaction(BaseModel):
 
     class Config:
         fields = {'embedded': '_embedded'}
+
+
+class UserToken(BaseModel):
+    user_id: str
+    device_id: str
+    name: Optional[str]
+    token: str
+    client_token: str
+    pub_key: str
+    created: str
+    last_access: str

@@ -1,6 +1,7 @@
+from datetime import datetime
 from typing import Optional, List
 from fastapi import FastAPI, Request, Query
-from entities import Collection, Link, Blockchain, Transaction
+from entities import Collection, Link, Blockchain, Transaction, UserToken
 from client import Client
 
 app = FastAPI()
@@ -59,4 +60,19 @@ async def get_transactions(
             'transactions': transactions.contents
         },
         _links=links
+    )
+
+
+@app.post('/users/token', response_model=UserToken)
+def post_user_token():
+    now = datetime.utcnow().isoformat()
+    return UserToken(
+        user_id='1',
+        device_id='a-device-id',
+        name=None,
+        token='static-user-token',
+        client_token='static-client-token',
+        pub_key='',
+        created=now,
+        last_access=now
     )
