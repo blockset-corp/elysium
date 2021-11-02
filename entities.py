@@ -54,6 +54,7 @@ class Blockchain(BaseModel):
     verified_block_height: int
     verified_block_hash: str
     confirmations_until_final: int
+    native_currency_id: str
 
 
 class Transfer(BaseModel):
