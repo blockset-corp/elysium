@@ -1,12 +1,25 @@
+from datetime import timedelta
 from typing import List, Dict
-from asyncio import gather, Semaphore
+from asyncio import gather
 from aiohttp import ClientSession
+from memoize.wrapper import memoize
+from memoize.configuration import MutableCacheConfiguration, DefaultInMemoryCacheConfiguration
+from memoize.key import EncodedMethodNameAndArgsKeyExtractor
 from entities import Blockchain, Transaction, HeightPaginatedResponse
 from blockchains import BLOCKCHAINS
 from providers.abstract import AbstractProvider
 from providers.blockcypher import BlockCypherProvider
 from providers.bitgo import BitgoFeeProvider
 from providers.etherscan import EtherscanProvider
+
+
+def blockchain_cache_config():
+    return MutableCacheConfiguration.initialized_with(DefaultInMemoryCacheConfiguration(
+        capacity=1000,
+        method_timeout=timedelta(seconds=10),
+        update_after=timedelta(seconds=10),
+        expire_after=timedelta(seconds=10),
+    )).set_key_extractor(EncodedMethodNameAndArgsKeyExtractor(skip_first_arg_as_self=True))
 
 
 class Client(ClientSession):
@@ -30,11 +43,15 @@ class Client(ClientSession):
             raise ValueError(f'Unsupported chain: {blockchain_id}')
         return self.provider_map[blockchain_id]
 
+    @memoize(configuration=blockchain_cache_config())
     async def get_blockchain(self, chain_id: str) -> Blockchain:
+        print('rendering blockchain')
         provider = self._get_provider(chain_id)
         return await provider.get_blockchain_data(self, chain_id)
 
+    @memoize(configuration=blockchain_cache_config())
     async def get_blockchains(self, testnet: bool) -> List[Blockchain]:
+        print('rendering blockchains')
         tasks = []
         for chain in BLOCKCHAINS:
             if (testnet and chain['is_mainnet']) or (not testnet and not chain['is_mainnet']):
@@ -46,20 +63,11 @@ class Client(ClientSession):
 
     async def get_transactions(self, addresses: List[str], blockchain_id: str, start_height: int, end_height: int,
                                max_page_size: int, include_raw: bool) -> HeightPaginatedResponse[Transaction]:
-        sem = Semaphore(12)
         provider = self._get_provider(blockchain_id)
 
-        async def fetch(addr):
-            async with sem:
-                return await provider.get_address_transactions(
-                    session=self,
-                    chain_id=blockchain_id,
-                    address=addr,
-                    start_height=start_height,
-                    end_height=end_height
-                )
-
-        tasks = [fetch(addr) for addr in addresses]
+        tasks = [provider.get_address_transactions(session=self, chain_id=blockchain_id,
+                                                   address=addr, start_height=start_height,
+                                                   end_height=end_height) for addr in addresses]
         results = await gather(*tasks)
 
         all_txns = []

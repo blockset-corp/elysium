@@ -1,6 +1,6 @@
 import os
 import warnings
-from asyncio import gather
+from asyncio import gather, Semaphore
 from datetime import datetime, timedelta
 from typing import List
 from aiohttp import ClientSession
@@ -12,6 +12,8 @@ BASE_URL = 'https://api.etherscan.io/api'
 TOKEN = os.getenv('ETHERSCAN_TOKEN', '')
 if not TOKEN:
     warnings.warn('ETHERSCAN_TOKEN not found in environment')
+ETHERSCAN_RATE_LIMIT = 5
+SEM = Semaphore(ETHERSCAN_RATE_LIMIT)
 FEE_CACHE = {}  # {chain_id: {'ts': datetime, 'value': fees}
 FEE_CACHE_EXPIRY = timedelta(minutes=1)
 
@@ -225,6 +227,6 @@ class EtherscanProvider(AbstractProvider, AbstractFeeProvider):
     async def _get(self, session, **kwargs):
         params = kwargs.pop('params', {})
         params['apikey'] = TOKEN
-        async with session.get(BASE_URL, params=params, **kwargs) as resp:
+        async with SEM, session.get(BASE_URL, params=params, **kwargs) as resp:
             data = await resp.json()
         return data['result']

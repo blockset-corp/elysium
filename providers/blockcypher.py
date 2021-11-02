@@ -1,5 +1,6 @@
 import os
 import warnings
+from asyncio import Semaphore
 from datetime import datetime
 from aiohttp import ClientSession
 from dateutil.parser import isoparse
@@ -9,6 +10,8 @@ from blockchains import BLOCKCHAIN_MAP
 
 BASE_URL = 'https://api.blockcypher.com/v1'
 TOKEN = os.getenv('BLOCKCYPHER_TOKEN', '')
+BLOCKCYPHER_RATE_LIMIT = 10
+SEM = Semaphore(value=BLOCKCYPHER_RATE_LIMIT)
 if not TOKEN:
     warnings.warn('BLOCKCYPHER_TOKEN not found in environment')
 CHAIN_MAP = {
@@ -25,8 +28,7 @@ class BlockCypherProvider(AbstractProvider):
 
     async def get_blockchain_data(self, session: ClientSession, chain_id: str) -> Blockchain:
         blockcypher_id = _blockcypher_id(chain_id)
-        async with session.get(f'{BASE_URL}/{blockcypher_id}?token={TOKEN}') as resp:
-            val = await resp.json()
+        val = await self._get(session, f'{blockcypher_id}', params={})
         fees = await self.fee_provider.get_fees(session, chain_id)
         return Blockchain(
             fee_estimates=fees,
@@ -40,10 +42,12 @@ class BlockCypherProvider(AbstractProvider):
     async def get_address_transactions(self, session: ClientSession, chain_id: str, address: str,
                                        start_height: int, end_height: int) -> HeightPaginatedResponse[Transaction]:
         blockcypher_id = _blockcypher_id(chain_id)
-        rsrc = f'{BASE_URL}/{blockcypher_id}/addrs/{address}/full'
-        opts = f'token={TOKEN}&includeHex=true&limit=50&before={end_height}&after={start_height}'
-        async with session.get(f'{rsrc}?{opts}') as resp:
-            val = await resp.json()
+        val = await self._get(session, f'{blockcypher_id}/addrs/{address}/full', params={
+            'includeHex': 'true',
+            'limit': '50',
+            'before': str(end_height),
+            'after': str(start_height)
+        })
         contents = []
         last_block_height = None
         for tx in val.get('txs', []):
@@ -99,6 +103,14 @@ class BlockCypherProvider(AbstractProvider):
             resp.next_end_height = last_block_height
 
         return resp
+
+    async def _get(self, session, url, **kwargs):
+        params = kwargs.pop('params', {})
+        params['token'] = TOKEN
+        async with SEM, session.get(f'{BASE_URL}/{url}', params=params, **kwargs) as resp:
+            if resp.status != 200:
+                raise ValueError(f'Invalid status code {resp.status} for GET {url}')
+            return await resp.json()
 
 
 def _blockcypher_id(chain_id):
