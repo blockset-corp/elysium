@@ -49,7 +49,7 @@ async def get_transactions(
     async with Client() as client:
         if end_height is None or end_height < 1:
             blockchain = await client.get_blockchain(blockchain_id)
-            end_height = blockchain.verified_block_height
+            end_height = blockchain.verified_height
         transactions = await client.get_transactions(
             addresses=address,
             blockchain_id=blockchain_id,
