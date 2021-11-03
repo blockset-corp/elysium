@@ -11,6 +11,7 @@ from providers.abstract import AbstractProvider
 from providers.blockchair import BlockChairProvider
 from providers.bitgo import BitgoFeeProvider
 from providers.etherscan import EtherscanProvider
+from providers.ripple import RippleProvider
 
 
 def blockchain_cache_config():
@@ -29,14 +30,14 @@ class Client(ClientSession):
         super().__init__(*args, **kwargs)
         bitgo = BitgoFeeProvider()
         blockchair = BlockChairProvider(bitgo)
-        etherscan = EtherscanProvider()
         self.provider_map = {
             'bitcoin-mainnet': blockchair,
             'bitcoin-testnet': blockchair,
             'bitcoincash-mainnet': blockchair,
             'litecoin-mainnet': blockchair,
             'dogecoin-mainnet': blockchair,
-            'ethereum-mainnet': etherscan
+            'ethereum-mainnet': EtherscanProvider(),
+            'ripple-mainnet': RippleProvider()
         }
 
     def _get_provider(self, blockchain_id: str) -> AbstractProvider:

@@ -3,7 +3,7 @@ BLOCKCHAINS = [
         'name': 'Bitcoin',
         'id': 'bitcoin-mainnet',
         'is_mainnet': True,
-        'network': 'bitcoin',
+        'network': 'mainnet',
         'confirmations_until_final': 4,
         'native_currency_id': 'bitcoin-mainnet:__native__'
     },
@@ -11,7 +11,7 @@ BLOCKCHAINS = [
         'name': 'Bitcoin Cash',
         'id': 'bitcoincash-mainnet',
         'is_mainnet': True,
-        'network': 'bitcoincash',
+        'network': 'mainnet',
         'confirmations_until_final': 6,
         'native_currency_id': 'bitcoincash-mainnet:__native__'
     },
@@ -38,7 +38,15 @@ BLOCKCHAINS = [
         'network': 'mainnet',
         'confirmations_until_final': 20,
         'native_currency_id': 'ethereum-mainnet:__native__'
-    }
+    },
+    {
+        'name': 'Ethereum',
+        'id': 'ripple-mainnet',
+        'is_mainnet': True,
+        'network': 'mainnet',
+        'confirmations_until_final': 1,
+        'native_currency_id': 'ripple-mainnet:__native__'
+    },
 ]
 
 BLOCKCHAIN_MAP = {c['id']: c for c in BLOCKCHAINS}

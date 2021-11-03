@@ -4,14 +4,14 @@ All Blocksets go to heaven
 
 ### Chain Support Status
 
-- 🤷 Bitcoin Mainnet - Untested, hit roadblock with BlockCypher rate limits
-- 🤷 Bitcoin Testnet - Untested, hit roadblock with BlockCypher rate limits
-- 🤷 Bitcoin Cash Mainnet - Untested, not supported by BlockCypher
-- 🤷 Litecoin Mainnet - Untested, hit roadblock with BlockCypher rate limits
-- 🤷 Dogecoin Mainnet  - Untested, hit roadblock with BlockCypher rate limits
-- 😁 Ethereum Mainnet is mostly working via Etherscan. Correct token balances, correct number of transactions, 
+- 😁 Bitcoin Mainnet - Working with BlockChair backend
+- 😁 Bitcoin Testnet - Working with BlockChair backend
+- 😁 Bitcoin Cash Mainnet - Working with BlockChair backend
+- 😁 Litecoin Mainnet - Working with BlockChair backend
+- 😁 Dogecoin Mainnet - Working with BlockChair backend
+- 😁 Ethereum Mainnet - Mostly working via Etherscan. Correct token balances, correct number of transactions, 
   incorrect ETH balance because of fee calculation issue.
-- 🙅 Ripple Mainnet not started
+- 🙅 Ripple Mainnet - Implemented but not tested
 - 🙅 Tezos Mainnet not started
 - 🙅 Hedera Mainnet not started
 
