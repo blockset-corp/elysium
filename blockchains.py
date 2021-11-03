@@ -40,7 +40,7 @@ BLOCKCHAINS = [
         'native_currency_id': 'ethereum-mainnet:__native__'
     },
     {
-        'name': 'Ethereum',
+        'name': 'Ripple',
         'id': 'ripple-mainnet',
         'is_mainnet': True,
         'network': 'mainnet',

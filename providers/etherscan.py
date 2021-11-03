@@ -78,7 +78,10 @@ class EtherscanProvider(AbstractProvider, AbstractFeeProvider):
             confirmations = None
             meta = {}
             fee = None
+            status = 'confirmed'
             if txn['tx']:
+                if txn['tx'].get('isError') == '1':
+                    status = 'failed'
                 timestamp = datetime.utcfromtimestamp(int(txn['tx']['timeStamp']))
                 total_fee = str(int(txn['tx']['gasUsed']) * int(txn['tx']['gasPrice']))
                 block_hash = txn['tx']['blockHash']
@@ -191,7 +194,7 @@ class EtherscanProvider(AbstractProvider, AbstractFeeProvider):
                 size=int(meta.get('gasUsed', '0x0'), base=16),
                 block_hash=block_hash,
                 block_height=block_height,
-                status='confirmed' if txn.get('tx') and txn['tx'].get('isError', '0') else 'failed',
+                status=status,
                 meta={'input': '0x', **meta},
             ))
 
