@@ -1,6 +1,6 @@
 import os
 import warnings
-from asyncio import gather
+from asyncio import gather, Semaphore
 from datetime import datetime, timedelta
 import backoff
 from aiohttp import ClientSession, ClientError
@@ -22,6 +22,7 @@ CHAIN_MAP = {
     'litecoin-mainnet': 'litecoin',
     'dogecoin-mainnet': 'dogecoin'
 }
+SEM = Semaphore(value=10)
 
 
 def transaction_cache_config():
@@ -92,7 +93,7 @@ class BlockChairProvider(AbstractProvider):
         params = kwargs.pop('params', {})
         params['key'] = TOKEN
         url = f'{BASE_URL}/{blockchair_chain}/{endpoint}'
-        async with session.get(url, params=params, **kwargs) as resp:
+        async with SEM, session.get(url, params=params, **kwargs) as resp:
             if resp.status != 200:
                 print(f'BlockChairProvider bad status code: {resp.status} url: {url}')
                 resp.raise_for_status()
