@@ -24,14 +24,14 @@ CHAIN_MAP = {
     'litecoin-mainnet': 'litecoin',
     'dogecoin-mainnet': 'dogecoin'
 }
-SEM = Semaphore(value=10)
+SEM = Semaphore(value=12)
 LAST_BLOCK_HEIGHT = 0
 
 
 def transaction_cache_config():
     return MutableCacheConfiguration.initialized_with(DefaultInMemoryCacheConfiguration(
         capacity=100_000,
-        method_timeout=timedelta(seconds=5),
+        method_timeout=timedelta(minutes=5),
         update_after=timedelta(days=365),
         expire_after=timedelta(days=365),
     )).set_key_extractor(EncodedMethodNameAndArgsKeyExtractor(skip_first_arg_as_self=True))
