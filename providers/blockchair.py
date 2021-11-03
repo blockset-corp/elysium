@@ -1,6 +1,8 @@
 import os
 import warnings
 from asyncio import gather, Semaphore
+from base64 import b64encode
+from binascii import unhexlify
 from datetime import datetime, timedelta
 import backoff
 from aiohttp import ClientSession, ClientError
@@ -23,6 +25,7 @@ CHAIN_MAP = {
     'dogecoin-mainnet': 'dogecoin'
 }
 SEM = Semaphore(value=10)
+LAST_BLOCK_HEIGHT = 0
 
 
 def transaction_cache_config():
@@ -37,11 +40,11 @@ def transaction_cache_config():
 class BlockChairProvider(AbstractProvider):
     def __init__(self, fee_provider: AbstractFeeProvider):
         self.fee_provider = fee_provider
-        self.last_block_height = 0
 
     async def get_blockchain_data(self, session: ClientSession, chain_id: str) -> Blockchain:
         val = await self._get(session, chain_id, 'stats')
-        self.last_block_height = val['best_block_height']
+        global LAST_BLOCK_HEIGHT
+        LAST_BLOCK_HEIGHT = val['best_block_height']
         fees = await self.fee_provider.get_fees(session, chain_id)
         return Blockchain(
             fee_estimates=fees,
@@ -67,6 +70,7 @@ class BlockChairProvider(AbstractProvider):
     async def _get_transaction(self, session, chain_id, txdetails, idx):
         result = await self._get(session, chain_id, f'raw/transaction/{txdetails["hash"]}')
         txn = result[txdetails['hash']]['decoded_raw_transaction']
+        raw = unhexlify(result[txdetails['hash']]['raw_transaction'])
         return Transaction(
             transaction_id=f'{chain_id}:{txn["txid"]}',
             identifier=txn['txid'],
@@ -75,14 +79,14 @@ class BlockChairProvider(AbstractProvider):
             timestamp=datetime.strptime(txdetails['time'], '%Y-%m-%d %H:%M:%S').isoformat(),
             _embedded={'transfers': []},
             fee=Amount(currency_id=f'{chain_id}:__native__', amount='0'),
-            confirmations=self.last_block_height - txdetails['block_id'],
+            confirmations=LAST_BLOCK_HEIGHT - txdetails['block_id'],
             size=txn['size'],
             index=idx,
             block_hash='',
             block_height=txdetails['block_id'],
             status='confirmed',
             meta={},
-            raw=result[txdetails['hash']]['raw_transaction']
+            raw=b64encode(raw).decode('ascii')
         )
 
     @backoff.on_exception(backoff.expo, ClientError, max_tries=3)
