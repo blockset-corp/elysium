@@ -22,7 +22,6 @@ CHAIN_MAP = {
     'litecion-mainnet': 'litecoin',
     'dogecoin-mainnet': 'dogecoin'
 }
-NOW = datetime.utcnow().isoformat()
 
 
 def transaction_cache_config():
@@ -72,7 +71,7 @@ class BlockChairProvider(AbstractProvider):
             identifier=txn['txid'],
             hash=txn['hash'],
             blockchain_id=chain_id,
-            timestamp=NOW,
+            timestamp=datetime.strptime(txdetails['time'], '%Y-%m-%d %H:%M:%S').isoformat(),
             _embedded={'transfers': []},
             fee=Amount(currency_id=f'{chain_id}:__native__', amount='0'),
             confirmations=self.last_block_height - txdetails['block_id'],
