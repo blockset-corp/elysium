@@ -54,8 +54,15 @@ uvicorn elysium:app --reload
   * 👎 Frequent downtime
 
 **[Amberdata](https://amberdata.io)** - for Bitcoin-alikes
+  * 🚫 Doesn't return raw transaction data (though it says they do, nothing is returned) 
+    A support ticket has been submitted.
   * 👍 Returns correct data for BTC, BCH, LTC
   * 👎 No DOGE support
+
+**[Blockchair](https://blockchair.com)** - for Bitcoin-alikes
+  * 👎 Individual address queries
+  * 👎 Further, have to request each transaction individually as address endpoints only return txids
+  * 👎 Expensive
 
 **[Blockdemon](https://blockdaemon.com/)** - for Bitcoin-alikes
   * 🚫 Can't return raw transaction data
