@@ -19,7 +19,7 @@ CHAIN_MAP = {
     'bitcoin-mainnet': 'bitcoin',
     'bitcoin-testnet': 'bitcoin/testnet',
     'bitcoincash-mainnet': 'bitcoin-cash',
-    'litecion-mainnet': 'litecoin',
+    'litecoin-mainnet': 'litecoin',
     'dogecoin-mainnet': 'dogecoin'
 }
 
