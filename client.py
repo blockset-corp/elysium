@@ -18,7 +18,7 @@ from providers.tezos import TezosProvider
 def blockchain_cache_config():
     return MutableCacheConfiguration.initialized_with(DefaultInMemoryCacheConfiguration(
         capacity=1000,
-        method_timeout=timedelta(seconds=10),
+        method_timeout=timedelta(seconds=60),
         update_after=timedelta(seconds=10),
         expire_after=timedelta(seconds=10),
     )).set_key_extractor(EncodedMethodNameAndArgsKeyExtractor(skip_first_arg_as_self=True))

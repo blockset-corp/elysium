@@ -13,7 +13,7 @@ BASE_URL = 'https://api.etherscan.io/api'
 TOKEN = os.getenv('ETHERSCAN_TOKEN', '')
 if not TOKEN:
     warnings.warn('ETHERSCAN_TOKEN not found in environment')
-ETHERSCAN_RATE_LIMIT = int(os.getenv('ETHERSCAN_RATE_LIMIT', '4'))
+ETHERSCAN_RATE_LIMIT = int(os.getenv('ETHERSCAN_RATE_LIMIT', '3'))
 SEM = Semaphore(ETHERSCAN_RATE_LIMIT)
 FEE_CACHE = {}  # {chain_id: {'ts': datetime, 'value': fees}
 FEE_CACHE_EXPIRY = timedelta(minutes=1)
@@ -80,7 +80,7 @@ class EtherscanProvider(AbstractProvider, AbstractFeeProvider):
             fee = None
             if txn['tx']:
                 timestamp = datetime.utcfromtimestamp(int(txn['tx']['timeStamp']))
-                total_fee = str(int(txn['tx']['gas']) * int(txn['tx']['gasPrice']))
+                total_fee = str(int(txn['tx']['gasUsed']) * int(txn['tx']['gasPrice']))
                 block_hash = txn['tx']['blockHash']
                 block_height = int(txn['tx']['blockNumber'])
                 confirmations = int(txn['tx']['confirmations'])
@@ -118,7 +118,7 @@ class EtherscanProvider(AbstractProvider, AbstractFeeProvider):
                 if timestamp is None:
                     timestamp = datetime.utcfromtimestamp(int(tok_tx['timeStamp']))
                 if fee is None:
-                    total_fee = str(int(tok_tx['gas']) * int(tok_tx['gasPrice']))
+                    total_fee = str(int(tok_tx['gasUsed']) * int(tok_tx['gasPrice']))
                     fee = Amount(currency_id=native_cur_id, amount=total_fee)
                     transfers.append(Transfer(
                         transfer_id=f'{chain_id}:{txid}:{xfer_counter}',
@@ -191,7 +191,7 @@ class EtherscanProvider(AbstractProvider, AbstractFeeProvider):
                 size=int(meta.get('gasUsed', '0x0'), base=16),
                 block_hash=block_hash,
                 block_height=block_height,
-                status='confirmed',
+                status='confirmed' if txn.get('tx') and txn['tx'].get('isError', '0') else 'failed',
                 meta={'input': '0x', **meta},
             ))
 
@@ -234,7 +234,7 @@ class EtherscanProvider(AbstractProvider, AbstractFeeProvider):
         })
         return int(result) * 1000
 
-    @backoff.on_exception(backoff.expo, ValueError, max_tries=3)
+    @backoff.on_exception(backoff.expo, ValueError, max_tries=3, factor=2)
     async def _get(self, session, **kwargs):
         params = kwargs.pop('params', {})
         params['apikey'] = TOKEN
@@ -244,4 +244,6 @@ class EtherscanProvider(AbstractProvider, AbstractFeeProvider):
                     print(f'Got status code = {resp.status} from Etherscan')
                     raise ValueError(f'Invalid status code {resp.status} for GET')
             data = await resp.json()
+            print(f'etherscan request: module={params.get("module", None)} action={params.get("action", None)} '
+                  f'status={data.get("status", "1")} message={data.get("message", "")}')
         return data['result']
