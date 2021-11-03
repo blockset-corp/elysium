@@ -8,9 +8,8 @@ from memoize.key import EncodedMethodNameAndArgsKeyExtractor
 from entities import Blockchain, Transaction, HeightPaginatedResponse
 from blockchains import BLOCKCHAINS
 from providers.abstract import AbstractProvider
-from providers.blockcypher import BlockCypherProvider
+from providers.blockchair import BlockChairProvider
 from providers.bitgo import BitgoFeeProvider
-from providers.blockbook import BlockbookProvider
 from providers.etherscan import EtherscanProvider
 
 
@@ -29,14 +28,14 @@ class Client(ClientSession):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         bitgo = BitgoFeeProvider()
-        blockbook = BlockbookProvider(bitgo)
-        blockcypher = BlockCypherProvider(bitgo)
+        blockchair = BlockChairProvider(bitgo)
         etherscan = EtherscanProvider()
         self.provider_map = {
-            'bitcoin-mainnet': blockcypher,
-            'bitcoincash-mainnet': blockbook,
-            'litecoin-mainnet': blockcypher,
-            'dogecoin-mainnet': blockcypher,
+            'bitcoin-mainnet': blockchair,
+            'bitcoin-testnet': blockchair,
+            'bitcoincash-mainnet': blockchair,
+            'litecoin-mainnet': blockchair,
+            'dogecoin-mainnet': blockchair,
             'ethereum-mainnet': etherscan
         }
 
