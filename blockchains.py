@@ -47,6 +47,14 @@ BLOCKCHAINS = [
         'confirmations_until_final': 1,
         'native_currency_id': 'ripple-mainnet:__native__'
     },
+    {
+        'name': 'Tezos',
+        'id': 'tezos-mainnet',
+        'is_mainnet': True,
+        'network': 'mainnet',
+        'confirmations_until_final': 30,
+        'native_currency_id': 'tezos-mainnet:__native__'
+    }
 ]
 
 BLOCKCHAIN_MAP = {c['id']: c for c in BLOCKCHAINS}

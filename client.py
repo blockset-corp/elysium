@@ -12,6 +12,7 @@ from providers.blockchair import BlockChairProvider
 from providers.bitgo import BitgoFeeProvider
 from providers.etherscan import EtherscanProvider
 from providers.ripple import RippleProvider
+from providers.tezos import TezosProvider
 
 
 def blockchain_cache_config():
@@ -37,7 +38,8 @@ class Client(ClientSession):
             'litecoin-mainnet': blockchair,
             'dogecoin-mainnet': blockchair,
             'ethereum-mainnet': EtherscanProvider(),
-            'ripple-mainnet': RippleProvider()
+            'ripple-mainnet': RippleProvider(),
+            'tezos-mainnet': TezosProvider(),
         }
 
     def _get_provider(self, blockchain_id: str) -> AbstractProvider:
