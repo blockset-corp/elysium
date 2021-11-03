@@ -1,1 +1,1 @@
-web: uvicorn elysium:app
+web: uvicorn elysium:app --host=0.0.0.0 --port=${PORT:-5000}
