@@ -1,7 +1,7 @@
 import os
 import warnings
 from asyncio import Semaphore
-from datetime import datetime
+from datetime import datetime, timezone
 import backoff
 from aiohttp import ClientSession
 from dateutil.parser import isoparse
@@ -33,7 +33,7 @@ class BlockCypherProvider(AbstractProvider):
         fees = await self.fee_provider.get_fees(session, chain_id)
         return Blockchain(
             fee_estimates=fees,
-            fee_estimates_timestamp=datetime.now().isoformat(),
+            fee_estimates_timestamp=datetime.now().replace(tzinfo=timezone.utc).isoformat(timespec='milliseconds'),
             block_height=val['height'],
             verified_height=val['height'],
             verified_block_hash=val['hash'],
@@ -84,7 +84,7 @@ class BlockCypherProvider(AbstractProvider):
                 identifier=tx['hash'],
                 hash=tx['hash'],
                 blockchain_id=chain_id,
-                timestamp=isoparse(tx['received']).isoformat(),
+                timestamp=isoparse(tx['received']).replace(tzinfo=timezone.utc).isoformat(timespec='milliseconds'),
                 _embedded={'transfers': transfers},
                 fee=_to_amount(chain_id, tx['fees']),
                 confirmations=tx['confirmations'],

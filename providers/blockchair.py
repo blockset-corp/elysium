@@ -3,7 +3,7 @@ import warnings
 from asyncio import gather, Semaphore
 from base64 import b64encode
 from binascii import unhexlify
-from datetime import datetime, timedelta
+from datetime import datetime, timezone, timedelta
 import backoff
 from aiohttp import ClientSession, ClientError
 from memoize.wrapper import memoize
@@ -48,7 +48,7 @@ class BlockChairProvider(AbstractProvider):
         fees = await self.fee_provider.get_fees(session, chain_id)
         return Blockchain(
             fee_estimates=fees,
-            fee_estimates_timestamp=datetime.now().isoformat(),
+            fee_estimates_timestamp=datetime.now().replace(tzinfo=timezone.utc).isoformat(timespec='milliseconds'),
             block_height=val['best_block_height'],
             verified_height=val['best_block_height'],
             verified_block_hash=val['best_block_hash'],
@@ -76,7 +76,7 @@ class BlockChairProvider(AbstractProvider):
             identifier=txn['txid'],
             hash=txn['hash'],
             blockchain_id=chain_id,
-            timestamp=datetime.strptime(txdetails['time'], '%Y-%m-%d %H:%M:%S').isoformat(),
+            timestamp=datetime.strptime(txdetails['time'], '%Y-%m-%d %H:%M:%S').replace(tzinfo=timezone.utc).isoformat(timespec='milliseconds'),
             _embedded={'transfers': []},
             fee=Amount(currency_id=f'{chain_id}:__native__', amount='0'),
             confirmations=LAST_BLOCK_HEIGHT - txdetails['block_id'],

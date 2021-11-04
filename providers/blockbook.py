@@ -1,5 +1,5 @@
 from asyncio import Semaphore
-from datetime import datetime
+from datetime import datetime, timezone
 import backoff
 from aiohttp import ClientSession
 from entities import Blockchain, Transaction, Amount, Transfer
@@ -24,7 +24,7 @@ class BlockbookProvider(AbstractProvider):
         fees = await self.fee_provider.get_fees(session, chain_id)
         return Blockchain(
             fee_estimates=fees,
-            fee_estimates_timestamp=datetime.now().isoformat(),
+            fee_estimates_timestamp=datetime.now().replace(tzinfo=timezone.utc).isoformat(timespec='milliseconds'),
             block_height=val['blockbook']['bestHeight'],
             verified_height=val['blockbook']['bestHeight'],
             verified_block_hash=val['backend']['bestBlockHash'],
@@ -74,7 +74,7 @@ class BlockbookProvider(AbstractProvider):
                 identifier=tx['txid'],
                 hash=tx['txid'],
                 blockchain_id=chain_id,
-                timestamp=datetime.utcfromtimestamp(tx['blockTime']).isoformat(),
+                timestamp=datetime.utcfromtimestamp(tx['blockTime']).replace(tzinfo=timezone.utc).isoformat(timespec='milliseconds'),
                 _embedded={'transfers': transfers},
                 fee=_to_amount(chain_id, tx['fees']),
                 confirmations=tx['confirmations'],

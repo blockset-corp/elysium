@@ -1,7 +1,7 @@
 import os
 import warnings
 from asyncio import gather, Semaphore
-from datetime import datetime, timedelta
+from datetime import datetime, timezone, timedelta
 from typing import List
 import backoff
 from aiohttp import ClientSession
@@ -31,7 +31,7 @@ class EtherscanProvider(AbstractProvider, AbstractFeeProvider):
         fees = await self.get_fees(session, chain_id)
         return Blockchain(
             fee_estimates=fees,
-            fee_estimates_timestamp=datetime.now().isoformat(),
+            fee_estimates_timestamp=datetime.now().replace(tzinfo=timezone.utc).isoformat(timespec='milliseconds'),
             block_height=int(block['number'], 16),
             verified_height=int(block['number'], 16),
             verified_block_hash=block['hash'],
@@ -186,7 +186,7 @@ class EtherscanProvider(AbstractProvider, AbstractFeeProvider):
                 identifier=txid,
                 hash=txid,
                 blockchain_id=chain_id,
-                timestamp=timestamp.isoformat(),
+                timestamp=timestamp.replace(tzinfo=timezone.utc).isoformat(timespec='milliseconds'),
                 _embedded={'transfers': transfers},
                 fee=fee,
                 confirmations=confirmations,

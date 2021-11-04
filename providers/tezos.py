@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from aiohttp import ClientSession
 from dateutil.parser import isoparse
 from blockchains import BLOCKCHAIN_MAP
@@ -20,7 +20,7 @@ class TezosProvider(AbstractProvider):
                 tier='1m',
                 estimated_confirmation_in=60000
             )],
-            fee_estimates_timestamp=datetime.now().isoformat(),
+            fee_estimates_timestamp=datetime.now().replace(tzinfo=timezone.utc).isoformat(timespec='milliseconds'),
             block_height=val['level'],
             verified_height=val['level'],
             verified_block_hash=val['hash'],
@@ -68,7 +68,7 @@ class TezosProvider(AbstractProvider):
                 identifier=op['hash'],
                 hash=op['hash'],
                 blockchain_id=chain_id,
-                timestamp=isoparse(op['time']).isoformat(),
+                timestamp=isoparse(op['time']).replace(tzinfo=timezone.utc).isoformat(timespec='milliseconds'),
                 _embedded={'transfers': xfers},
                 fee=fee,
                 confirmations=op['confirmations'],

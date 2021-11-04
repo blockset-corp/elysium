@@ -1,5 +1,5 @@
 from asyncio import Semaphore
-from datetime import datetime
+from datetime import datetime, timezone
 from aiohttp import ClientSession
 from dateutil.parser import isoparse
 from blockchains import BLOCKCHAIN_MAP
@@ -22,7 +22,7 @@ class RippleProvider(AbstractProvider):
                 tier='0m',
                 estimated_confirmation_in=4000
             )],
-            fee_estimates_timestamp=datetime.now().isoformat(),
+            fee_estimates_timestamp=datetime.now().replace(tzinfo=timezone.utc).isoformat(timespec='milliseconds'),
             block_height=val['ledger']['ledger_index'],
             verified_height=val['ledger']['ledger_index'],
             verified_block_hash=val['ledger']['ledger_hash'],
@@ -67,7 +67,7 @@ class RippleProvider(AbstractProvider):
                 identifier=tx['hash'],
                 hash=tx['hash'],
                 blockchain_id=chain_id,
-                timestamp=isoparse(tx['date']).isoformat(),
+                timestamp=isoparse(tx['date']).replace(tzinfo=timezone.utc).isoformat(timespec='milliseconds'),
                 _embedded={'transfers': xfers},
                 fee=fee,
                 confirmations=LAST_BLOCK_HEIGHT - tx['ledger_index'],
