@@ -27,8 +27,10 @@ class BlocksetApiMixin:
                 transfer_amount = int(transfer['amount']['amount'])
                 if transfer['from_address'] in addresses:
                     new_amount = cur_amount - transfer_amount
-                else:
+                elif transfer['to_address'] in addresses:
                     new_amount = cur_amount + transfer_amount
+                else:
+                    new_amount = cur_amount
                 totals[transfer['amount']['currency_id']] = new_amount
 
         return {k: Account(currency_id=k, balance=v) for k, v in totals.items()}
