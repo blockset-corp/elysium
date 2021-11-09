@@ -2,8 +2,9 @@ import os
 from tests.blockset import Blockset, TestClient
 from elysium import app
 from hdwallet import BIP44HDWallet, BIP32HDWallet
-from hdwallet.derivations import BIP44Derivation, BIP32Derivation
-from hdwallet.cryptocurrencies import DogecoinMainnet
+from hdwallet.derivations import BIP44Derivation, Derivation
+from hdwallet.cryptocurrencies import DogecoinMainnet, BitcoinMainnet, LitecoinMainnet, BitcoinCashMainnet, EthereumMainnet
+from ecashaddress.convert import Address as BCHAddress
 
 MNEMONICS = []
 if from_env := os.getenv('MNEMONIC', None):
@@ -13,7 +14,34 @@ WALLET_CURRENCIES = {
     'dogecoin-mainnet': {
         'type': 'bip44',
         'formats': ['p2pkh'],
-        'crypto': DogecoinMainnet
+        'crypto': DogecoinMainnet,
+        'change': True
+    },
+    'bitcoin-mainnet': {
+        'type': 'bip32',
+        'formats': ['p2pkh', 'p2wpkh'],
+        'crypto': BitcoinMainnet,
+        'change': True
+    },
+    'bitcoincash-mainnet': {
+        'type': 'bip32',
+        'formats': ['p2pkh'],
+        'crypto': BitcoinMainnet,
+        'change': True,
+        'cashaddr': 'bitcoincash'
+    },
+    'litecoin-mainnet': {
+        'type': 'bip44',
+        'formats': ['p2pkh', 'p2wpkh'],
+        'crypto': LitecoinMainnet,
+        'change': True
+    },
+    'ethereum-mainnet': {
+        'type': 'bip44',
+        'formats': ['p2pkh'],
+        'crypto': EthereumMainnet,
+        'change': False,
+        'lower': True
     }
 }
 
@@ -23,15 +51,6 @@ ADDRESSES = [
 
 elysium = TestClient(app)
 blockset = Blockset()
-
-
-
-# def test_diff():
-#     blockset = Blockset()
-#     for blockchain_id, addresses in ADDRESSES:
-#         blockset_result = blockset.get_balances(blockchain_id, addresses)
-#         elysium_result = elysium.get_balances(blockchain_id, addresses)
-#         assert list(blockset_result.keys()) == list(elysium_result.keys())
 
 
 def get_wallet_balance(mnemonic, blockchain_id, client):
@@ -45,52 +64,63 @@ def get_wallet_balance(mnemonic, blockchain_id, client):
     wallet.from_mnemonic(mnemonic, language='english', passphrase=None)
     index = 0
     all_accounts = {}
+    num_addresses = 0
     while True:
         wallet.clean_derivation()
         addresses = derive_addresses(blockchain_id, index, wallet)
+        # print(f'{blockchain_id} checking addresses {addresses}')
         accounts = client.get_balances(blockchain_id=blockchain_id, addresses=addresses)
-        has_encountered_balance = False
+        num_addresses += len(addresses)
+        has_encountered_entries = False
         for k, v in accounts.items():
             if k in all_accounts:
-                all_accounts[k].balance += v.balance
+                all_accounts[k].entries.extend(v.entries)
             else:
                 all_accounts[k] = v
-            if v.balance:
-                has_encountered_balance = True
-        if not has_encountered_balance:
+            if v.entries:
+                has_encountered_entries = True
+        if not has_encountered_entries:
             break
         index += 1
-
+    num_tx = sum(len(v.entries) for v in all_accounts.values())
+    print(f'{blockchain_id} checked {num_addresses} addresses and found {num_tx} transactions')
     return all_accounts
 
 
 def derive_addresses(blockchain_id, index, wallet):
     opts = WALLET_CURRENCIES[blockchain_id]
     if opts['type'] == 'bip44':
-        derivation_class = BIP44Derivation
+        derivation = BIP44Derivation(cryptocurrency=opts['crypto'], account=0, address=index)
+        change_derivation = BIP44Derivation(cryptocurrency=opts['crypto'], account=0, address=index, change=True)
     elif opts['type'] == 'bip32':
-        derivation_class = BIP32Derivation
+        derivation = Derivation.from_path("m/0'/0").from_index(index)
+        # print(f'{blockchain_id} derivation {derivation}')
+        change_derivation = Derivation.from_path("m/0'/1").from_index(index)
     else:
         raise ValueError(f'Unrecognized wallet type: {opts["type"]}')
     all_addresses = []
-    for format in opts['formats']:
+    for fmt in opts['formats']:
         wallet.clean_derivation()
-        derivation = derivation_class(cryptocurrency=opts['crypto'], account=0, address=index)
         wallet.from_path(derivation)
-        address = getattr(wallet, f'{format}_address')()
-        change_derivation = derivation_class(cryptocurrency=opts['crypto'], account=0, address=index, change=True)
-        wallet.clean_derivation()
-        wallet.from_path(change_derivation)
-        change_address = getattr(wallet, f'{format}_address')()
-        all_addresses.extend([address, change_address])
+        all_addresses.append(getattr(wallet, f'{fmt}_address')())
+        if opts['change']:
+            wallet.clean_derivation()
+            wallet.from_path(change_derivation)
+            all_addresses.append(getattr(wallet, f'{fmt}_address')())
+    if opts.get('lower', False):
+        all_addresses = [a.lower() for a in all_addresses]
+    if opts.get('cashaddr', False):
+        all_addresses = [BCHAddress.from_string(a).to_cash_address(opts['cashaddr']) for a in all_addresses]
     return all_addresses
 
 
 def test_mnemonics():
+    print('testing mnemonics')
     for mnemonic in MNEMONICS:
         for blockchain_id in WALLET_CURRENCIES.keys():
             blockset_balances = get_wallet_balance(mnemonic, blockchain_id, client=blockset)
             elysium_balances = get_wallet_balance(mnemonic, blockchain_id, client=elysium)
             for k, v in blockset_balances.items():
                 assert k in elysium_balances
+                print(f'{k} blockset_balance={v.balance} elysium_balance={elysium_balances[k].balance}')
                 assert v.balance == elysium_balances[k].balance

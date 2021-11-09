@@ -8,14 +8,23 @@ from fastapi.testclient import TestClient as BaseTestClient
 
 
 @dataclass
+class LedgerEntry:
+    amount: int
+
+
+@dataclass
 class Account:
     currency_id: str
-    balance: int
+    entries: List[LedgerEntry]
+
+    @property
+    def balance(self) -> int:
+        return sum([l.amount for l in self.entries])
 
 
 class BlocksetApiMixin:
     def get_balances(self, blockchain_id: str, addresses: List[str]) -> Mapping[str, Account]:
-        totals = {}  # currency_id: balance_as_int
+        totals = {}  # currency_id: Account
         transactions = self.paginate_fully('transactions', {
             'blockchain_id': blockchain_id,
             'address': addresses
@@ -23,17 +32,15 @@ class BlocksetApiMixin:
         for transaction in transactions:
             transfers = transaction.get('_embedded', {}).get('transfers', [])
             for transfer in transfers:
-                cur_amount = totals.setdefault(transfer['amount']['currency_id'], 0)
+                cur_id = transfer['amount']['currency_id']
+                account = totals.setdefault(cur_id, Account(currency_id=cur_id, entries=[]))
                 transfer_amount = int(transfer['amount']['amount'])
                 if transfer['from_address'] in addresses:
-                    new_amount = cur_amount - transfer_amount
+                    account.entries.append(LedgerEntry(-transfer_amount))
                 elif transfer['to_address'] in addresses:
-                    new_amount = cur_amount + transfer_amount
-                else:
-                    new_amount = cur_amount
-                totals[transfer['amount']['currency_id']] = new_amount
+                    account.entries.append(LedgerEntry(transfer_amount))
 
-        return {k: Account(currency_id=k, balance=v) for k, v in totals.items()}
+        return totals
 
     def paginate_fully(self, resource, params):
         results = []
