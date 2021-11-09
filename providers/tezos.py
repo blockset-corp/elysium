@@ -32,41 +32,66 @@ class TezosProvider(AbstractProvider):
         params = {
             'order': 'asc',
             'limit': '10000',
-            'types': 'transaction,delegation,reveal'
+            'types': 'transaction,delegation,reveal,bake,airdrop,'
         }
         async with session.get(f'{API_URL}/account/{address}/op', params=params) as resp:
             val = await resp.json()
 
         txns = []
-        for i, op in enumerate(val['ops']):
-            txid = f'{chain_id}:{op["hash"]}'
-            fee = Amount(currency_id='tezos-mainnet:__native__', amount=str(int(op['fee']*MUTEZ)))
+        by_hash = {}
+        for op in val['ops']:
+            ops = by_hash.setdefault(op['hash'], [])
+            ops.append(op)
+
+        for i, (hsh, oplist) in enumerate(by_hash.items()):
+            txid = f'{chain_id}:{hsh}'
+            combined_fee = round(sum(op['fee'] * MUTEZ for op in oplist))
+            fee = Amount(currency_id='tezos-mainnet:__native__', amount=str(int(combined_fee)))
+            op = oplist[0]
             xfers = [
                 Transfer(
                     transfer_id=f'{txid}:0',
                     blockchain_id=chain_id,
-                    from_address=op['sender'],
+                    from_address=oplist[0]['sender'],
                     to_address='__fee__',
                     index=0,
                     transaction_id=txid,
                     amount=fee,
                     meta={'status': op['status'], 'type': op['type'].upper()}
-                ),
-                Transfer(
-                    transfer_id=f'{txid}:1',
-                    blockchain_id=chain_id,
-                    from_address=op['sender'],
-                    to_address=op.get('receiver', 'unknown'),
-                    index=1,
-                    transaction_id=txid,
-                    amount=Amount(currency_id='tezos-mainnet:__native__', amount=str(int(op['volume']*MUTEZ))),
-                    meta={'status': op['status'], 'type': op['type'].upper()}
                 )
             ]
+            total_amount = round(op['volume'] * MUTEZ)
+            if op['type'] == 'transaction':
+                if op['status'] == 'failed' or op['status'] == 'backtracked':
+                    total_amount = '0'
+                xfers.append(
+                    Transfer(
+                        transfer_id=f'{txid}:1',
+                        blockchain_id=chain_id,
+                        from_address=op['sender'],
+                        to_address=op.get('receiver', 'unknown'),
+                        index=1,
+                        transaction_id=txid,
+                        amount=Amount(currency_id='tezos-mainnet:__native__', amount=str(total_amount)),
+                        meta={'status': op['status'], 'type': op['type'].upper()}
+                    ))
+            if op.get('burned', 0):
+                xfers.append(
+                    Transfer(
+                        transfer_id=f'{txid}:3',
+                        blockchain_id=chain_id,
+                        from_address=oplist[0]['sender'],
+                        to_address='__fee__',
+                        index=0,
+                        transaction_id=txid,
+                        amount=Amount(currency_id='tezos-mainnet:__native__', amount=(str(round(op['burned'] * MUTEZ)))),
+                        meta={'status': op['status'], 'type': op['type'].upper()}
+                    )
+                )
             txns.append(Transaction(
                 transaction_id=txid,
-                identifier=op['hash'],
-                hash=op['hash'],
+                identifier=hsh,
+                hash=hsh,
                 blockchain_id=chain_id,
                 timestamp=isoparse(op['time']).replace(tzinfo=timezone.utc).isoformat(timespec='milliseconds'),
                 _embedded={'transfers': xfers},
@@ -76,7 +101,7 @@ class TezosProvider(AbstractProvider):
                 size=op['storage_size'],
                 block_hash=op['block'],
                 block_height=op['height'],
-                status='confirmed',
+                status='confirmed' if op['status'] == 'applied' else 'failed',
                 meta={},
             ))
 
