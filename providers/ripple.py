@@ -40,6 +40,9 @@ class RippleProvider(AbstractProvider):
         for i, tx in enumerate(val['transactions']):
             txid = f'{chain_id}:{tx["hash"]}'
             fee = Amount(currency_id='ripple-mainnet:__native__', amount=tx['tx']['Fee'])
+            total_amount = tx['tx']['Amount']
+            if tx['meta']['TransactionResult'] != 'tesSUCCESS':
+                total_amount = '0'
             xfers = [
                 Transfer(
                     transfer_id=f'{txid}:0',
@@ -58,7 +61,7 @@ class RippleProvider(AbstractProvider):
                     to_address=tx['tx']['Destination'],
                     index=1,
                     transaction_id=txid,
-                    amount=Amount(currency_id='ripple-mainnet:__native__', amount=tx['tx']['Amount']),
+                    amount=Amount(currency_id='ripple-mainnet:__native__', amount=total_amount),
                     meta={}
                 )
             ]
@@ -75,7 +78,7 @@ class RippleProvider(AbstractProvider):
                 size=1,
                 block_hash='',
                 block_height=tx['ledger_index'],
-                status='confirmed',
+                status='confirmed' if tx['meta']['TransactionResult'] == 'tesSUCCESS' else 'failed',
                 meta={'DestinationTag': tx['tx'].get('DestinationTag', 0)},
             ))
         return HeightPaginatedResponse(contents=txns, has_more=False)

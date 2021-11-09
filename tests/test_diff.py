@@ -3,7 +3,7 @@ from tests.blockset import Blockset, TestClient
 from elysium import app
 from hdwallet import BIP44HDWallet, BIP32HDWallet
 from hdwallet.derivations import BIP44Derivation, Derivation
-from hdwallet.cryptocurrencies import DogecoinMainnet, BitcoinMainnet, LitecoinMainnet, BitcoinCashMainnet, EthereumMainnet
+from hdwallet.cryptocurrencies import DogecoinMainnet, BitcoinMainnet, LitecoinMainnet, EthereumMainnet
 from ecashaddress.convert import Address as BCHAddress
 
 MNEMONICS = []
@@ -46,7 +46,9 @@ WALLET_CURRENCIES = {
 }
 
 ADDRESSES = [
-    ('ethereum-mainnet', ['0x04d542459de6765682d21771d1ba23dc30fb675f'])
+    ('ethereum-mainnet', ['0x04d542459de6765682d21771d1ba23dc30fb675f']),
+    ('tezos-mainnet', ['tz1RTbjUrBVmRt6ckoLfX7Wni4xk33eCNyd8']),
+    ('ripple-mainnet', ['r9rK39tQDkS4MTtPqYehdoHwUgr6DsnNa1'])
 ]
 
 elysium = TestClient(app)
@@ -124,3 +126,19 @@ def test_mnemonics():
                 assert k in elysium_balances
                 print(f'{k} blockset_balance={v.balance} elysium_balance={elysium_balances[k].balance}')
                 assert v.balance == elysium_balances[k].balance
+
+
+def test_addresses():
+    print('testing addresses')
+    for blockchain_id, addresses in ADDRESSES:
+        blockset_balances = blockset.get_balances(blockchain_id=blockchain_id, addresses=addresses)
+        elysium_balances = elysium.get_balances(blockchain_id=blockchain_id, addresses=addresses)
+        for k, v in blockset_balances.items():
+            assert k in elysium_balances
+            for i in range(max(len(v.entries), len(elysium_balances[k].entries))):
+                blockset_entry = 'None' if i+1 >= len(v.entries) else v.entries[i]
+                elysium_entry = 'None' if i+1 >= len(elysium_balances[k].entries) else elysium_balances[k].entries[i]
+                print(f'blockset entry: {blockset_entry} elysium_entry: {elysium_entry}')
+            # assert len(v.entries) == len(elysium_balances[k].entries)
+            print(f'{k} blockset_balance={v.balance} elysium_balance={elysium_balances[k].balance}')
+            assert v.balance == elysium_balances[k].balance

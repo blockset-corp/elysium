@@ -10,6 +10,13 @@ from fastapi.testclient import TestClient as BaseTestClient
 @dataclass
 class LedgerEntry:
     amount: int
+    index: int
+    transaction_id: str
+    transaction_index: int
+
+    def __str__(self):
+        return f'{str(self.amount).rjust(10)} {str(self.index).rjust(3)} {str(self.transaction_index).rjust(3)} ' \
+               f'{self.transaction_id}'
 
 
 @dataclass
@@ -29,16 +36,17 @@ class BlocksetApiMixin:
             'blockchain_id': blockchain_id,
             'address': addresses
         })
-        for transaction in transactions:
+        for ti, transaction in enumerate(transactions):
             transfers = transaction.get('_embedded', {}).get('transfers', [])
-            for transfer in transfers:
+            for i, transfer in enumerate(transfers):
                 cur_id = transfer['amount']['currency_id']
                 account = totals.setdefault(cur_id, Account(currency_id=cur_id, entries=[]))
                 transfer_amount = int(transfer['amount']['amount'])
-                if transfer['from_address'] in addresses:
-                    account.entries.append(LedgerEntry(-transfer_amount))
-                elif transfer['to_address'] in addresses:
-                    account.entries.append(LedgerEntry(transfer_amount))
+                if transfer_amount != 0:
+                    if transfer['from_address'] in addresses:
+                        account.entries.append(LedgerEntry(-transfer_amount, i, transaction['identifier'], ti))
+                    elif transfer['to_address'] in addresses:
+                        account.entries.append(LedgerEntry(transfer_amount, i, transaction['identifier'], ti))
 
         return totals
 
