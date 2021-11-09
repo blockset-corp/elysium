@@ -10,7 +10,7 @@ from memoize.wrapper import memoize
 from memoize.configuration import MutableCacheConfiguration, DefaultInMemoryCacheConfiguration
 from memoize.key import EncodedMethodNameAndArgsKeyExtractor
 from blockchains import BLOCKCHAIN_MAP
-from entities import HeightPaginatedResponse, Transaction, Blockchain, Amount
+from entities import HeightPaginatedResponse, Transaction, Blockchain, Amount, Transfer
 from providers.abstract import AbstractProvider, AbstractFeeProvider
 
 BASE_URL = 'https://api.blockchair.com'
@@ -61,24 +61,37 @@ class BlockChairProvider(AbstractProvider):
             'limit': '10000',
             'transaction_details': 'true'
         })
-        tasks = [self._get_transaction(session, chain_id, txdetails, i)
+        tasks = [self._get_transaction(session, chain_id, txdetails, i, address)
                  for i, txdetails in enumerate(result.get(address, {}).get('transactions', []))]
         txns = await gather(*tasks)
         return HeightPaginatedResponse(contents=list(txns), has_more=False)
 
     @memoize(configuration=transaction_cache_config())
-    async def _get_transaction(self, session, chain_id, txdetails, idx):
+    async def _get_transaction(self, session, chain_id, txdetails, idx, address):
         result = await self._get(session, chain_id, f'raw/transaction/{txdetails["hash"]}')
         txn = result[txdetails['hash']]['decoded_raw_transaction']
         raw = unhexlify(result[txdetails['hash']]['raw_transaction'])
+        txid = f'{chain_id}:{txn["txid"]}'
+        curid = f'{chain_id}:__native__'
+        timestamp = datetime.strptime(txdetails['time'], '%Y-%m-%d %H:%M:%S').replace(tzinfo=timezone.utc)
+        transfer = Transfer(
+            transfer_id=f'{txid}:0',
+            blockchain_id=chain_id,
+            from_address='unknown' if txdetails['balance_change'] > 0 else address,
+            to_address='unknown' if txdetails['balance_change'] < 0 else address,
+            index=0,
+            transaction_id=txid,
+            amount=Amount(amount=str(abs(txdetails['balance_change'])), currency_id=curid),
+            meta={}
+        )
         return Transaction(
-            transaction_id=f'{chain_id}:{txn["txid"]}',
+            transaction_id=txid,
             identifier=txn['txid'],
             hash=txn['hash'],
             blockchain_id=chain_id,
-            timestamp=datetime.strptime(txdetails['time'], '%Y-%m-%d %H:%M:%S').replace(tzinfo=timezone.utc).isoformat(timespec='milliseconds'),
-            _embedded={'transfers': []},
-            fee=Amount(currency_id=f'{chain_id}:__native__', amount='0'),
+            timestamp=timestamp.isoformat(timespec='milliseconds'),
+            _embedded={'transfers': [transfer]},
+            fee=Amount(currency_id=curid, amount='0'),
             confirmations=LAST_BLOCK_HEIGHT - txdetails['block_id'],
             size=txn['size'],
             index=idx,
