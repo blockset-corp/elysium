@@ -11,9 +11,9 @@ All Blocksets go to heaven
 - 😁 Dogecoin Mainnet - Working with BlockChair backend
 - 😁 Ethereum Mainnet - Mostly working via Etherscan. Correct token balances, correct number of transactions, 
   incorrect ETH balance because of fee calculation issue.
-- 🙅 Ripple Mainnet - Implemented but not tested
-- 🙅 Tezos Mainnet not started
-- 🙅 Hedera Mainnet not started
+- 😁 Ripple Mainnet - Working with public APIs
+- 😁 Tezos Mainnet - Workign with public APIs
+- 🙅 Hedera Mainnet - Might not be possible
 
 ### Usage & Setup
 
